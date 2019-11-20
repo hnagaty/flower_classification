@@ -6,9 +6,6 @@ Created on Sun Nov 17 07:33:51 2019
 @author: hnagaty
 """
 #%%
-#imagefile = "/home/hnagaty/data/flower_data/test/1/image_06743.jpg"
-#checkpoint = "checkpoint.pth"
-gpu = True
 top_k = 3
 category_names = "cat_to_name.json"
 
@@ -36,7 +33,7 @@ if args.top_k is not None: top_k = args.top_k
 category_names = args.category_names
 
 gpu = args.gpu
-
+device = torch.device("cuda" if gpu else "cpu")
 if (gpu):
     print("Using GPU ........")
 else:
@@ -44,8 +41,17 @@ else:
 
 #%%
 def load_checkpoint(filepath):
-    checkpoint = torch.load(filepath)
-    model = models.densenet121(pretrained=True)
+    if gpu:
+        checkpoint = torch.load(filepath)
+    else:
+        checkpoint = torch.load(filepath, map_location=lambda storage, loc: storage)
+    if checkpoint['arch'] == 'vgg13':
+        model = models.vgg13(pretrained=True)
+    elif checkpoint['arch'] == 'densenet':
+        model = models.densenet121(pretrained=True)
+    else:
+        print(f"{checkpoint['arch']} architecture is not supported. ")
+        exit()
     for param in model.parameters():
         param.requires_grad = False
     model.classifier = checkpoint['classifier']
@@ -80,8 +86,6 @@ def process_image(im):
 def predict(image_path, model, topk=5):
     ''' Predict the class (or classes) of an image using a trained deep learning model.
     '''
-    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cuda" if gpu else "cpu")
     model.to(device)
     model.eval()
     im = Image.open(image_path)
@@ -90,7 +94,7 @@ def predict(image_path, model, topk=5):
     img = torch.from_numpy(npImg)
     img = img.view(1, 3, 224, 224)
     img = img.type(torch.FloatTensor)
-    img = img.cuda()
+    img = img.to(device)
     with torch.no_grad():
         output = model.forward(img)
 
@@ -110,7 +114,7 @@ def predict(image_path, model, topk=5):
 
 
 #%%
-model = load_checkpoint('checkpoint.pth')
+model = load_checkpoint(checkpoint)
 
 #%%
 probs, classes = predict(imagefile, model, topk=top_k)

@@ -88,7 +88,7 @@ testloader = torch.utils.data.DataLoader(test_data, batch_size=64)
 if gpu:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 else:
-    device = "cpu"
+    device = torch.device("cpu")
 
 model = models.densenet121(pretrained=True)
 
@@ -151,17 +151,14 @@ print_every = 10
 
 start = time.time()
 
-print("============================================")
+print("==============================================")
 print("Now training the model with the below settings")
 print(f"Model is trained on {device}")
 print(f"Architecture: {arch}")
 print(f"Learning Rate: {learning_rate}")
 print(f"Hidden Layers: {hidden_units}")
 print(f"Epochs: {epochs}")
-
-
-
-
+print("==============================================")
 
 
 for epoch in range(epochs):
@@ -218,6 +215,7 @@ checkpoint = {'state_dict': model.state_dict(),
               'optim_state': optimizer.state_dict(),
               'epochs': epochs,
               'classifier': model.classifier,
-              'class_to_idx': model.class_to_idx}
+              'class_to_idx': model.class_to_idx,
+              'arch': arch}
 
 torch.save(checkpoint, save_dir + '/checkpointAs.pth')
